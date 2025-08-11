@@ -1,60 +1,36 @@
-name: Build Image → Push Docker Hub → Terraform Deploy
+provider "aws" {
+  region = "us-east-2"  # or use a variable
+}
 
-on:
-  push:
-    branches: [ main ]
+variable "image" {
+  description = "Docker image to deploy"
+  type        = string
+}
 
-env:
-  TF_WORKING_DIR: ./terraform
+resource "aws_instance" "app_server" {
+  ami           = "ami-0c02fb55956c7d316"  # Amazon Linux 2 AMI (update for your region)
+  instance_type = "t2.micro"
 
-jobs:
-  build-and-deploy:
-    runs-on: ubuntu-latest
+  user_data = <<-EOF
+              #!/bin/bash
+              yum update -y
+              yum install -y python3 docker
+              service docker start
+              usermod -a -G docker ec2-user
 
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+              # Pull and run Docker container with the image passed
+              docker pull ${var.image}
+              docker run -d ${var.image}
 
-      - name: Set up QEMU (for multi-platform, optional)
-        uses: docker/setup-qemu-action@v2
+              # Alternatively, if you want to run app.py directly (if copied)
+              # python3 /path/to/app.py
+              EOF
 
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
+  tags = {
+    Name = "TerraformAppServer"
+  }
+}
 
-      - name: Build Docker image
-        run: |
-          IMAGE_TAG=${GITHUB_SHA::8}
-          IMAGE=${{ secrets.DOCKER_USERNAME }}/python-docker-app:${IMAGE_TAG}
-          echo "IMAGE=${IMAGE}" >> $GITHUB_ENV
-          docker build -t ${IMAGE} .
-
-      - name: Push Docker image to Docker Hub
-        run: |
-          docker push $IMAGE
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v2
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION || 'us-east-1' }}
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v2
-        with:
-          terraform_version: 1.5.5
-
-      - name: Terraform Init
-        working-directory: ${{ env.TF_WORKING_DIR }}
-        run: terraform init -input=false
-
-      - name: Terraform Plan
-        working-directory: ${{ env.TF_WORKING_DIR }}
-        run: terraform plan -input=false -var="image=${IMAGE}"
-
-      - name: Terraform Apply
-        working-directory: ${{ env.TF_WORKING_DIR }}
-        run: terraform apply -auto-approve -input=false -var="image=${IMAGE}"
+output "instance_public_ip" {
+  value = aws_instance.app_server.public_ip
+}
