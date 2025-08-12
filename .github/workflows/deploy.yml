@@ -19,15 +19,12 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Build Docker image
+      - name: Build & Push Docker image
         run: |
           IMAGE=${{ secrets.DOCKER_USERNAME }}/python-docker-app:latest
           echo "IMAGE=$IMAGE" >> $GITHUB_ENV
-          docker build -t $IMAGE 
-          
-      - name: Push Docker image
-        run: |
-          docker push ${{ env.IMAGE }}
+          docker build -t $IMAGE .
+          docker push $IMAGE
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
@@ -37,18 +34,10 @@ jobs:
       - name: Terraform Init
         working-directory: terraform
         run: terraform init
-        
-
-      - name: Terraform Plan
-        working-directory: terraform
-        run: terraform apply -auto-approve -var="image=${{ env.IMAGE }}"
-        
 
       - name: Terraform Apply
         working-directory: terraform
         run: terraform apply -auto-approve -var="image=${{ env.IMAGE }}"
-        
-        
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
