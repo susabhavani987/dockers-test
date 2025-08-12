@@ -8,7 +8,7 @@ variable "image" {
 }
 
 resource "aws_instance" "app_server" {
-  ami           = "ami-0c02fb55956c7d316"  # Amazon Linux 2 AMI (update for your region)
+  ami           = "ami-01de4781572fa1285"  # Amazon Linux 2 AMI (update for your region)
   instance_type = "t2.micro"
 
   user_data = <<-EOF
