@@ -22,7 +22,7 @@ resource "aws_instance" "app_server" {
               docker pull ${var.image}
 			  docker run -d \
                --log-driver=awslogs \
-               --log-opt awslogs-region=us-east-1 \
+               --log-opt awslogs-region=us-east-2 \
                --log-opt awslogs-group=my-docker-logs \
                --log-opt awslogs-stream=${var.image} \
                 ${var.image}
