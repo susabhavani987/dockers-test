@@ -20,7 +20,12 @@ resource "aws_instance" "app_server" {
 
               # Pull and run Docker container with the image passed
               docker pull ${var.image}
-              docker run -d ${var.image}
+			  docker run -d \
+               --log-driver=awslogs \
+               --log-opt awslogs-region=us-east-1 \
+               --log-opt awslogs-group=my-docker-logs \
+               --log-opt awslogs-stream=${var.image} \
+                ${var.image}
 
               # Alternatively, if you want to run app.py directly (if copied)
               # python3 /path/to/app.py
