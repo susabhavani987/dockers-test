@@ -1,0 +1,10 @@
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pyspark-config
+  namespace: data-jobs
+data:
+  S3_BUCKET: testbuckaltnewvijay
+  OUTPUT_PREFIX: eks-pyspark-output
+  AWS_REGION: us-east-2

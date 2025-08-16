@@ -1,0 +1,43 @@
+
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: pyspark-job
+  namespace: data-jobs
+spec:
+  backoffLimit: 2
+  template:
+    spec:
+      serviceAccountName: spark-job
+      containers:
+        - name: pyspark
+          image: my-dockerhub-user/pyspark-eks:latest
+          imagePullPolicy: Always
+          env:
+            - name: S3_BUCKET
+              valueFrom:
+                configMapKeyRef:
+                  name: pyspark-config
+                  key: S3_BUCKET
+            - name: OUTPUT_PREFIX
+              valueFrom:
+                configMapKeyRef:
+                  name: pyspark-config
+                  key: OUTPUT_PREFIX
+            # If not using IRSA, fall back to secrets (not recommended for prod)
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: aws-credentials
+                  key: aws_access_key_id
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: aws-credentials
+                  key: aws_secret_access_key
+            - name: AWS_DEFAULT_REGION
+              valueFrom:
+                configMapKeyRef:
+                  name: pyspark-config
+                  key: us-east-2
+      restartPolicy: Never
