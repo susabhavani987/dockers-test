@@ -87,8 +87,6 @@ resource "aws_iam_instance_profile" "ec2_ssm_profile" {
 locals {
   safe_stream_name = replace(var.image, "/|:", "-")
 }
-
-
 # EC2 instance
 resource "aws_instance" "app_server" {
 
