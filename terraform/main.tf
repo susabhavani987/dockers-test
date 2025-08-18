@@ -1,3 +1,12 @@
+terraform {
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.0"
+    }
+  }
+}
+
 provider "aws" {
   region = "us-east-2"
 }
@@ -7,11 +16,16 @@ variable "image" {
   type        = string
 }
 
-# Create a security group allowing HTTP (80) access
+# Get the default VPC
+data "aws_vpc" "default" {
+  default = true
+}
+
+# Security group allowing HTTP access
 resource "aws_security_group" "app_sg" {
   name        = "app-sg"
   description = "Allow HTTP access"
-  vpc_id      = data.aws_vpc.default.id  # Default VPC
+  vpc_id      = data.aws_vpc.default.id
 
   ingress {
     from_port   = 80
@@ -28,28 +42,16 @@ resource "aws_security_group" "app_sg" {
   }
 }
 
-data "aws_subnets" "default" {
-  filter {
-    name   = "vpc-id"
-    values = [data.aws_vpc.default.id]
-  }
-}
-
-# Then pick the first subnet
-subnet_id = data.aws_subnets.default.ids[0]
-
-
-# Create CloudWatch Log Group for Docker logs
+# CloudWatch log group for Docker logs
 resource "aws_cloudwatch_log_group" "docker_logs" {
   name              = "my-docker-logs1"
   retention_in_days = 7
 }
 
-# Launch EC2 instance
+# EC2 instance
 resource "aws_instance" "app_server" {
-  ami           = "ami-01de4781572fa1285"  # Amazon Linux 2 AMI
-  instance_type = "t2.micro"
-  subnet_id     = data.aws_subnet_ids.default.ids[0]
+  ami                    = "ami-01de4781572fa1285" # Amazon Linux 2 AMI
+  instance_type          = "t2.micro"
   vpc_security_group_ids = [aws_security_group.app_sg.id]
 
   user_data = <<-EOF
