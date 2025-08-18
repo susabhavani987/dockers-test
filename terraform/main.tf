@@ -84,11 +84,13 @@ resource "aws_iam_instance_profile" "ec2_ssm_profile" {
   role = aws_iam_role.ec2_ssm_role.name
 }
 
-# EC2 instance
-resource "aws_instance" "app_server" {
 locals {
   safe_stream_name = replace(var.image, "/|:", "-")
 }
+
+# EC2 instance
+resource "aws_instance" "app_server" {
+
   ami                    = "ami-01de4781572fa1285" # Amazon Linux 2
   instance_type          = "t2.micro"
   vpc_security_group_ids = [aws_security_group.app_sg.id]
