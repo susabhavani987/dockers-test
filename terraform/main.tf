@@ -91,21 +91,22 @@ resource "aws_instance" "app_server" {
   vpc_security_group_ids = [aws_security_group.app_sg.id]
   iam_instance_profile   = aws_iam_instance_profile.ec2_ssm_profile.name
 
-  user_data = <<-EOF
-              #!/bin/bash
-              yum update -y
-              amazon-linux-extras install docker -y
-              service docker start
-              usermod -a -G docker ec2-user
+user_data = <<-EOF
+		#!/bin/bash
+		yum update -y
+		amazon-linux-extras install docker -y
+		service docker start
+		usermod -a -G docker ec2-user
 
-              docker pull ${var.image}
-              docker run -d -p 80:5000 \
-                --log-driver=awslogs \
-                --log-opt awslogs-region=us-east-2 \
-                --log-opt awslogs-group=my-docker-logs1 \
-                --log-opt awslogs-stream=${var.image} \
-                ${var.image}
-              EOF
+		docker pull ${var.image}
+		docker run -d -p 80:5000 \
+		--log-driver=awslogs \
+		--log-opt awslogs-region=us-east-2 \
+		--log-opt awslogs-group=my-docker-logs1 \
+		--log-opt awslogs-stream=${var.image} \
+			${var.image}
+EOF
+
 
   tags = {
     Name = "TerraformAppServer"
