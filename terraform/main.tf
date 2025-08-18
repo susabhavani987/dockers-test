@@ -80,7 +80,7 @@ resource "aws_iam_role_policy_attachment" "cw_attach" {
 
 # Instance profile (unique name)
 resource "aws_iam_instance_profile" "ec2_ssm_profile" {
-  name = "ec2-ssm-profile-terraform-unique1"
+  name = "ec2-ssm-profile-terraform-unique2"
   role = aws_iam_role.ec2_ssm_role.name
 }
 
