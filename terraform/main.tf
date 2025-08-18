@@ -50,7 +50,7 @@ resource "aws_cloudwatch_log_group" "docker_logs" {
 
 # IAM Role for EC2 (Session Manager + CloudWatch)
 resource "aws_iam_role" "ec2_ssm_role" {
-  name = "ec2-ssm-role-terraform-unique"
+  name = "ec2-ssm-role-terraform-unique1"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
@@ -80,7 +80,7 @@ resource "aws_iam_role_policy_attachment" "cw_attach" {
 
 # Instance profile (unique name)
 resource "aws_iam_instance_profile" "ec2_ssm_profile" {
-  name = "ec2-ssm-profile-terraform-unique"
+  name = "ec2-ssm-profile-terraform-unique1"
   role = aws_iam_role.ec2_ssm_role.name
 }
 
