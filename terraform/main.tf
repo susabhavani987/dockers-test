@@ -86,6 +86,9 @@ resource "aws_iam_instance_profile" "ec2_ssm_profile" {
 
 # EC2 instance
 resource "aws_instance" "app_server" {
+locals {
+  safe_stream_name = replace(var.image, "/|:", "-")
+}
   ami                    = "ami-01de4781572fa1285" # Amazon Linux 2
   instance_type          = "t2.micro"
   vpc_security_group_ids = [aws_security_group.app_sg.id]
@@ -104,7 +107,7 @@ docker run -d -p 80:5000 \
   --log-driver=awslogs \
   --log-opt awslogs-region=us-east-2 \
   --log-opt awslogs-group=my-docker-logs-terraform-unique \
-  --log-opt awslogs-stream=${var.image} \
+  --log-opt awslogs-stream=${local.safe_stream_name} \
   ${var.image}
 EOF
 
