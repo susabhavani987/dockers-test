@@ -23,14 +23,14 @@ data "aws_vpc" "default" {
 
 
 # CloudWatch log group
-resource "aws_cloudwatch_log_group" "docker_logs" {
+resource "aws_cloudwatch_log_group1" "docker_logs" {
   name              = "my-docker-logs1"
   retention_in_days = 7
 }
 
 # IAM Role for EC2 (Session Manager + CloudWatch)
-resource "aws_iam_role" "ec2_ssm_role" {
-  name = "ec2-ssm-role"
+resource "aws_iam_role" "ec2_ssm_role1" {
+  name = "ec2-ssm-role1"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
