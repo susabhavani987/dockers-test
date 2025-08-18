@@ -21,9 +21,29 @@ data "aws_vpc" "default" {
   default = true
 }
 
+# Security group allowing HTTP access
+resource "aws_security_group" "app_sg" {
+  name        = "app-sg"
+  description = "Allow HTTP access"
+  vpc_id      = data.aws_vpc.default.id
+
+  ingress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
 
 # CloudWatch log group
-resource "aws_cloudwatch_log_group1" "docker_logs" {
+resource "aws_cloudwatch_log_group" "docker_logs" {
   name              = "my-docker-logs1"
   retention_in_days = 7
 }
@@ -48,26 +68,27 @@ resource "aws_iam_role" "ec2_ssm_role1" {
 
 # Attach Session Manager policy
 resource "aws_iam_role_policy_attachment" "ssm_attach" {
-  role       = aws_iam_role.ec2_ssm_role.name
+  role       = aws_iam_role.ec2_ssm_role1.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
 }
 
 # Attach CloudWatch policy
 resource "aws_iam_role_policy_attachment" "cw_attach" {
-  role       = aws_iam_role.ec2_ssm_role.name
+  role       = aws_iam_role.ec2_ssm_role1.name
   policy_arn = "arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy"
 }
 
 # Instance profile
 resource "aws_iam_instance_profile" "ec2_ssm_profile" {
   name = "ec2-ssm-profile"
-  role = aws_iam_role.ec2_ssm_role.name
+  role = aws_iam_role.ec2_ssm_role1.name
 }
 
 # EC2 instance
 resource "aws_instance" "app_server" {
   ami                    = "ami-01de4781572fa1285" # Amazon Linux 2
   instance_type          = "t2.micro"
+  vpc_security_group_ids = [aws_security_group.app_sg.id]
   iam_instance_profile   = aws_iam_instance_profile.ec2_ssm_profile.name
 
   user_data = <<-EOF
@@ -97,5 +118,4 @@ output "instance_public_ip" {
 }
 
 output "instance_id" {
-  value = aws_instance.app_server.id
-}
+  value = aws_instance_
