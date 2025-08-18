@@ -23,7 +23,7 @@ data "aws_vpc" "default" {
 
 # Security group allowing HTTP access (unique name)
 resource "aws_security_group" "app_sg" {
-  name        = "app-sg-terraform-unique"
+  name        = "app-sg-terraform-unique1"
   description = "Allow HTTP access"
   vpc_id      = data.aws_vpc.default.id
 
@@ -49,7 +49,7 @@ resource "aws_cloudwatch_log_group" "docker_logs" {
 }
 
 # IAM Role for EC2 (Session Manager + CloudWatch)
-resource "aws_iam_role" "ec2_ssm_role2" {
+resource "aws_iam_role" "ec2_ssm_role3" {
   name = "ec2-ssm-role-terraform-unique"
 
   assume_role_policy = jsonencode({
@@ -68,20 +68,20 @@ resource "aws_iam_role" "ec2_ssm_role2" {
 
 # Attach Session Manager policy
 resource "aws_iam_role_policy_attachment" "ssm_attach" {
-  role       = aws_iam_role.ec2_ssm_role2.name
+  role       = aws_iam_role.ec2_ssm_role3.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
 }
 
 # Attach CloudWatch policy
 resource "aws_iam_role_policy_attachment" "cw_attach" {
-  role       = aws_iam_role.ec2_ssm_role2.name
+  role       = aws_iam_role.ec2_ssm_role3.name
   policy_arn = "arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy"
 }
 
 # Instance profile (unique name)
 resource "aws_iam_instance_profile" "ec2_ssm_profile" {
   name = "ec2-ssm-profile-terraform-unique"
-  role = aws_iam_role.ec2_ssm_role2.name
+  role = aws_iam_role.ec2_ssm_role3.name
 }
 
 # EC2 instance
@@ -97,7 +97,8 @@ yum update -y
 amazon-linux-extras install docker -y
 service docker start
 usermod -a -G docker ec2-user
-
+sudo systemctl start amazon-ssm-agent
+sudo systemctl enable amazon-ssm-agent
 docker pull ${var.image}
 docker run -d -p 80:5000 \
   --log-driver=awslogs \
