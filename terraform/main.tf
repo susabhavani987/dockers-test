@@ -28,14 +28,16 @@ resource "aws_security_group" "app_sg" {
   }
 }
 
-# Fetch default VPC
-data "aws_vpc" "default" {
-  default = true
+data "aws_subnets" "default" {
+  filter {
+    name   = "vpc-id"
+    values = [data.aws_vpc.default.id]
+  }
 }
 
-data "aws_subnet_ids" "default" {
-  vpc_id = data.aws_vpc.default.id
-}
+# Then pick the first subnet
+subnet_id = data.aws_subnets.default.ids[0]
+
 
 # Create CloudWatch Log Group for Docker logs
 resource "aws_cloudwatch_log_group" "docker_logs" {
