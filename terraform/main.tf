@@ -68,7 +68,6 @@ resource "aws_iam_instance_profile" "ec2_ssm_profile" {
 resource "aws_instance" "app_server" {
   ami                    = "ami-01de4781572fa1285" # Amazon Linux 2
   instance_type          = "t2.micro"
-  vpc_security_group_ids = [aws_security_group.app_sg.id]
   iam_instance_profile   = aws_iam_instance_profile.ec2_ssm_profile.name
 
   user_data = <<-EOF
