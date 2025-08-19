@@ -16,14 +16,14 @@ variable "image" {
   type        = string
 }
 
-# Get the default VPC
+# Get default VPC
 data "aws_vpc" "default" {
   default = true
 }
 
-# Security group allowing HTTP access (unique name)
+# Security Group
 resource "aws_security_group" "app_sg" {
-  name        = "app-sg-terraform-unique1"
+  name        = "app-sg"
   description = "Allow HTTP access"
   vpc_id      = data.aws_vpc.default.id
 
@@ -42,15 +42,15 @@ resource "aws_security_group" "app_sg" {
   }
 }
 
-# CloudWatch log group (unique name)
+# CloudWatch Log Group
 resource "aws_cloudwatch_log_group" "docker_logs" {
   name              = "my-docker-logs-terraform-unique"
   retention_in_days = 7
 }
 
-# IAM Role for EC2 (Session Manager + CloudWatch)
+# IAM Role for EC2 (SSM + CloudWatch)
 resource "aws_iam_role" "ec2_ssm_role" {
-  name = "ec2-ssm-role-terraform-unique1"
+  name = "ec2-ssm-role-terraform-unique3"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
@@ -66,31 +66,27 @@ resource "aws_iam_role" "ec2_ssm_role" {
   })
 }
 
-# Attach Session Manager policy
+# Attach SSM Managed Policy
 resource "aws_iam_role_policy_attachment" "ssm_attach" {
   role       = aws_iam_role.ec2_ssm_role.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
 }
 
-# Attach CloudWatch policy
+# Attach CloudWatch Agent Policy
 resource "aws_iam_role_policy_attachment" "cw_attach" {
   role       = aws_iam_role.ec2_ssm_role.name
   policy_arn = "arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy"
 }
 
-# Instance profile (unique name)
+# IAM Instance Profile
 resource "aws_iam_instance_profile" "ec2_ssm_profile" {
-  name = "ec2-ssm-profile-terraform-unique2"
+  name = "ec2-ssm-profile-terraform-unique"
   role = aws_iam_role.ec2_ssm_role.name
 }
 
-locals {
-  safe_stream_name = replace(var.image, "/|:", "-")
-}
-# EC2 instance
+# EC2 Instance
 resource "aws_instance" "app_server" {
-
-  ami                    = "ami-01de4781572fa1285" # Amazon Linux 2
+  ami                    = "ami-01de4781572fa1285"
   instance_type          = "t2.micro"
   vpc_security_group_ids = [aws_security_group.app_sg.id]
   iam_instance_profile   = aws_iam_instance_profile.ec2_ssm_profile.name
@@ -100,16 +96,31 @@ resource "aws_instance" "app_server" {
 yum update -y
 amazon-linux-extras install docker -y
 service docker start
-usermod -a -G docker ec2-user
-sudo systemctl start amazon-ssm-agent
-sudo systemctl enable amazon-ssm-agent
-docker pull ${var.image}
+usermod -aG docker ec2-user
+
+# Start SSM agent
+systemctl enable amazon-ssm-agent
+systemctl start amazon-ssm-agent
+
+# Docker variables
+IMAGE="${var.image}"
+SAFE_STREAM_NAME=$(echo $IMAGE | sed 's/[:\/]/-/g')
+
+# Stop/remove existing container if exists
+if docker ps -a --format '{{.Names}}' | grep -Eq '^my-app-container$'; then
+    docker stop my-app-container
+    docker rm my-app-container
+fi
+
+# Pull and run Docker image
+docker pull $IMAGE
 docker run -d -p 80:5000 \
+  --name my-app-container \
   --log-driver=awslogs \
   --log-opt awslogs-region=us-east-2 \
   --log-opt awslogs-group=my-docker-logs-terraform-unique \
-  --log-opt awslogs-stream=${local.safe_stream_name} \
-  ${var.image}
+  --log-opt awslogs-stream=$SAFE_STREAM_NAME \
+  $IMAGE
 EOF
 
   tags = {
